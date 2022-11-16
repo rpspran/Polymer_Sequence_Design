@@ -1,0 +1,61 @@
+# LAMMPS input script for GNP
+# Generated on 11/2/2020
+units lj
+dimension 3
+atom_style bond
+#angle_style cosine
+
+bond_style fene
+pair_style lj/cut 2.5
+
+# ----------------------------------
+## READ_DATA
+# ----------------------------------
+read_data polymer2.data
+# ----------------------------------
+## BOND
+# ----------------------------------
+#bond_style fene
+bond_coeff 1 30.00 1.50 1.00 1.00
+#angle_coeff 1 50.0
+
+# ----------------------------------
+## PAIR INTERACTION
+# ----------------------------------
+pair_coeff 1 1 1.0 1.0 2.5
+pair_coeff 2 2 0.2 1.0 2.5
+pair_coeff 1 2 0.2 1.0 2.5
+
+# --------------------------------
+## GROUP DEFINE
+#---------------------------------
+# --------------------------------
+special_bonds fene
+pair_modify shift yes
+#---------------------------------
+## VELOCITY
+# -------------------------------
+velocity all create 1.0 234875 mom yes rot yes dist gaussian
+# --------------------------------
+## MINIMIZE & FIX
+# ----------------------------------
+minimize 1.0e-4 1.0e-6 100 1000
+log log.lammps
+fix 1 all nve
+fix 2 all langevin 1.0 1.0 100.0 48279
+fix 3 all momentum 100 linear 1 1 1
+#----------------------------------
+##  EQUILIBRATION RUN 
+#----------------------------------
+run_style verlet
+timestep   	0.005
+thermo     	1000
+thermo_style 	custom step temp press pe epair 
+run       	1000000
+#--------------------------
+# PRODUCTION RUN
+# -------------------------
+compute 	1 all gyration
+fix        	RgAve  all ave/time 1000 1000 1000000 c_1 file AvgRg.data
+dump       	1 all custom 10000 FENE.lammpstrj id mol type xu yu zu vx vy vz
+run        	1000000
